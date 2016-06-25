@@ -63,6 +63,6 @@ stream.on('end', function() {
 
 ```shell
 > node client.js
-client connected authorized
+client connected! stream authorized
 welcome!
 ```
