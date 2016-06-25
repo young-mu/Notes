@@ -91,9 +91,9 @@ openssl x509 -req -CA ca.crt -CAkey ca.key -CAcreateserial -in server.csr -exten
 openssl x509 -in server.crt -pubkey -out /dev/null > server.pub2
 ```
 
-### JS测试
+### 测试
 
-- Server
+- server (node)
 
 ```javascript
 var https = require('https');
@@ -113,24 +113,44 @@ https.createServer(options, function(req, res) {
 });
 ```
 
-- Client
+```shell
+> node server.js
+start to listen port 3000
+ok...
+```
+
+- client (shell)
+
+```shell
+# -k|--insecure: 由于系统没有内置私有证书，因此如果不加该参数会报错
+> curl -k|--insecure https://127.0.0.1:3000
+hello world
+```
+
+```shell
+# --cacert <crt_path>: 加载私有证书
+> curl --cacert keys/ca.crt https://127.0.0.1:3000
+hello world
+```
+
+- client (node)
 
 ```javascript
 var https = require('https');
 var fs = require('fs');
 
 var options = {
-    hostname: '127.0.0.1',
+    host: 'localhost', // 不能设置127.0.0.1，server.crt中不支持
     port: 3000,
+    path: '/',
     method: 'GET',
+    // rejectUnauthorized: false // 如果不指定ca，需要加该参数，否则出错
     ca: [fs.readFileSync('./keys/ca.crt')],
-    agent: false
 };
+
 options.agent = new https.Agent(options);
 
 var req = https.get(options, function(res) {
-    console.log('statusCode: ', res.statusCode);
-    console.log('headers: ', res.headers);
     res.setEncoding('utf-8');
     res.on('data', function(data) {
         console.log(data);
@@ -141,18 +161,8 @@ req.on('error', function(err) {
 });
 ```
 
-- 测试
-
 ```bash
--> node server.js
-start to listen port 3000
-ok...
-
--> node client.js
-statusCode:  200
-headers:  { date: 'Tue, 07 Jun 2016 03:59:19 GMT',
-  connection: 'close',
-  'transfer-encoding': 'chunked' }
+> node client.js
 hello world
 ```
 
