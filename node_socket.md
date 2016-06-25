@@ -7,43 +7,49 @@
 
 ### Net socket
 
-server (node)
+- server (node)
+
 ```javascript
 var server = net.createServer();
 server.listen(6789);
 ```
 
-client (node)
+- client (node)
+
 ```javascript
 var client = net.connect({port: 6789, host: '127.0.0.1'});
 ```
 
-client (shell)
+- client (shell)
+
 ```shell
 > telnet 127.0.0.1 6789
 ```
 
 ### Domain socket
 
-server (node)
+- server (node)
+
 ```javascript
 var server = net.createServer();
 server.listen('/tmp/echo.sock');
 ```
 
-client (node)
+- client (node)
+
 ```javascript
 var client = net.connect({path: '/tmp/echo.sock'});
 ```
 
-client (shell)
+- client (shell)
+
 ```shell
 > nc -U /tmp/echo.sock
 ```
 
 ### Net socket 完整例子
 
-- Server
+- server (node)
 
 ```javascript
 var net = require('net');
@@ -71,7 +77,15 @@ server.on('listening', function() {
 });
 ```
 
-- Client
+```shell
+> node server.js
+Server starts to listen on 127.0.0.1:6969
+CONNECTED FROM: 127.0.0.1:61626
+DATA: I'm Young!
+CLOSED BY: 127.0.0.1:61626
+```
+
+- client (node)
 
 ```javascript
 var net = require('net');
@@ -96,15 +110,7 @@ client.on('close', function() {
 });
 ```
 
-- 测试
-
 ```shell
-> node server.js
-Server starts to listen on 127.0.0.1:6969
-CONNECTED FROM: 127.0.0.1:61626
-DATA: I'm Young!
-CLOSED BY: 127.0.0.1:61626
-
 > node client.js
 CONNECT TO: 127.0.0.1:6969
 DATA: You said "I'm Young!"
