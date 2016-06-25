@@ -1,5 +1,48 @@
 # node socket
 
+- **net** (TCP)
+- **dgram** (UDP)
+
+## TCP
+
+### Net socket
+
+server (node)
+```javascript
+var server = net.createServer();
+server.listen(6789);
+```
+
+client (node)
+```javascript
+var client = net.connect({port: 6789, host: '127.0.0.1'});
+```
+
+client (shell)
+```shell
+> telnet 127.0.0.1 6789
+```
+
+### Domain socket
+
+server (node)
+```javascript
+var server = net.createServer();
+server.listen('/tmp/echo.sock');
+```
+
+client (node)
+```javascript
+var client = net.connect({path: '/tmp/echo.sock'});
+```
+
+client (shell)
+```shell
+> nc -U /tmp/echo.sock
+```
+
+### Net socket 完整例子
+
 - Server
 
 ```javascript
@@ -67,3 +110,7 @@ CONNECT TO: 127.0.0.1:6969
 DATA: You said "I'm Young!"
 CLOSE CONNECTION
 ```
+
+## UDP
+
+node中，TCP是Stream实例，而UDP只是EventEmitter实例
