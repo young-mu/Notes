@@ -59,7 +59,7 @@ var content = qs.stringify(get_data); // id=001&value=100
 var options = {
     hostname: '127.0.0.1',
     port: 80,
-    path: '/test?' + content, // test? = test.php?
+    path: '/test?' + content, // test? = test.php? only in Mac
     method: 'GET'
 };
 
@@ -102,10 +102,10 @@ var content = qs.stringify(post_data);
 var options = {
     hostname: '127.0.0.1',
     port: 80,
-    path: '/test',
+    path: '/test', // test = test.php only in Mac
     method: 'POST',
     headers: { // MUST have this header
-        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+        'Content-Type': 'application/x-www-form-urlencoded'
     }
 };
 
