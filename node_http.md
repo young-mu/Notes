@@ -72,14 +72,14 @@ http.createServer(function(req, res) {
             });
         }
     }
-}).listen(3000, '127.0.0.1');
+}).listen(3000); // if 2nd arg is null, it will listen any connection
 
-console.log('server running at http://127.0.0.1:3000/');
+console.log('server starts to listen port 3000');
 ```
 
 ```shell
 > node server.js
-server running at http://127.0.0.1:3000/
+server starts to listen port 3000
 GET request from localhost:3000
 POST request from localhost:3000
 ```
