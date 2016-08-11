@@ -132,3 +132,5 @@ SSL由Netscape于1995年发布，TLS由互联网协会ISOC（Internet SOCiety）
 6. [AES五种加密模式](http://www.cnblogs.com/starwolf/p/3365834.html?utm_source=tuicool&utm_medium=referral)
 7. [AES之CBC和CTR](http://www.metsky.com/archives/585.html)
 8. [非对称密钥交换](http://studygolang.com/articles/2984)
+9. [OCSP Stapling](https://segmentfault.com/a/1190000004045710)
+10. [Session ID和Session Ticket](http://www.ruanyifeng.com/blog/2014/09/illustration-ssl.html)

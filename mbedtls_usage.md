@@ -78,7 +78,7 @@ Notes:
 
 Notes:
 
-1. client端必须加`auto_mode=optional`，若不加该选项最终配置为`required`
+1. client端必须加`auth_mode=optional`，若不加该选项最终配置为`required`
 2. 选项`auth_mode`设置为`optional`会报`Server certificate`不合法，设置为`none`将不检查，设置为`required`握手阶段就会失败（因为`CA certificate`不合法）
 
 - **server2 + client.js + 自定义CA**
@@ -94,6 +94,30 @@ Notes:
 > cd /Users/Young/ABC/https; node server.js
 > ./build/programs/ssl/ssl_client2 ca_file=/Users/Young/ABC/https/keys/ca.crt auth_mode=none server_port=3000
 ```
+
+## workflow
+
+### client
+
+1. seed the random number generator (JS -> C)
+2. load CA certificate (JS -> C)
+3. load CLIENT certificate if needed (JS -> C)
+4. start the TCP connection (JS net module)
+5. setup TLS stuff like CA and CLIENT certificate etc. (JS -> C)
+6. perform handshake (JS -> C)
+7. verify SERVER certificate (JS -> C)
+8. ssl read and write (JS -> C)
+
+### server
+
+1. seed the random number generator (JS -> C)
+2. load CA certificate if needed (JS -> C)
+3. load SERVER certificate and SERVER key (JS -> C)
+4. setup listening TCP socket (JS net module)
+5. start to listen (JS net module)
+6. setup TLS stuff like CA and SERVER certificate etc. (JS -> C)
+7. perform handshake (JS -> C)
+8. ssl read and write (JS -> C)
 
 ## Use mbedTLS in client application
 
@@ -139,12 +163,14 @@ ok...
 #include "mbedtls/x509_crt.h"
 #include "mbedtls/certs.h"
 
-#define SERVER_PORT "3000"
-#define SERVER_NAME "localhost"
+#define SERVER_PORT "4433"
+#define SERVER_NAME "127.0.0.1"
 #define GET_REQUEST "GET / HTTP/1.0\r\n\r\n"
 #define DEBUG_LEVEL 0
 
-const char *cafile = "/Users/Young/Keys/ca.crt";
+const char *ca_crt_file = "/Users/Young/Keys/ca.crt";
+const char *client_crt_file = "/Users/Young/Keys/client.crt";
+const char *client_key_file = "/Users/Young/Keys/client.key";
 
 static void my_debug(void *ctx, int level, const char *file, int line, const char *str)
 {
@@ -163,14 +189,18 @@ int main(int argc, const char *argv[])
     mbedtls_ssl_config conf;
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
-    mbedtls_x509_crt cacert;
+    mbedtls_x509_crt ca_crt;
+    mbedtls_x509_crt client_crt;
+    mbedtls_pk_context client_key;
 
     mbedtls_net_init(&tls_server_fd);
     mbedtls_ssl_init(&ssl);
     mbedtls_ssl_config_init(&conf);
     mbedtls_entropy_init(&entropy);
     mbedtls_ctr_drbg_init(&ctr_drbg);
-    mbedtls_x509_crt_init(&cacert);
+    mbedtls_x509_crt_init(&ca_crt);
+    mbedtls_x509_crt_init(&client_crt);
+    mbedtls_pk_init(&client_key);
 
     mbedtls_debug_set_threshold(DEBUG_LEVEL);
 
@@ -183,10 +213,26 @@ int main(int argc, const char *argv[])
     }
     printf(" ok\n");
 
-    // load the CA cert
-    printf(" . Loading the CA certificate ...");
-    if ((ret = mbedtls_x509_crt_parse_file(&cacert, cafile)) != 0) {
+    // load the ca certificate
+    printf(" . Loading the ca certificate ...");
+    if ((ret = mbedtls_x509_crt_parse_file(&ca_crt, ca_crt_file)) != 0) {
         printf(" failed\n ! mbedtls_x509_crt_parse_file returned -0x%x\n\n", -ret);
+        goto exit;
+    }
+    printf(" ok\n");
+
+    // load the client certificate
+    printf(" . Loading the client certificate ...");
+    if ((ret = mbedtls_x509_crt_parse_file(&client_crt, client_crt_file)) != 0) {
+        printf(" failed\n ! mbedtls_x509_crt_parse_file returned -0x%x\n\n", -ret);
+        goto exit;
+    }
+    printf(" ok\n");
+
+    // load the client key
+    printf(" . Loading the client key ...");
+    if ((ret = mbedtls_pk_parse_keyfile(&client_key, client_key_file, "")) != 0) {
+        printf(" failed\n ! mbedtls_x509_pk_parse_keyfile returned -0x%x\n\n", -ret);
         goto exit;
     }
     printf(" ok\n");
@@ -211,7 +257,12 @@ int main(int argc, const char *argv[])
     mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_REQUIRED);
     mbedtls_ssl_conf_dbg(&conf, my_debug, stdout);
     mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
-    mbedtls_ssl_conf_ca_chain(&conf, &cacert, NULL);
+    mbedtls_ssl_conf_ca_chain(&conf, &ca_crt, NULL);
+
+    if ((ret = mbedtls_ssl_conf_own_cert(&conf, &client_crt, &client_key)) != 0) {
+        printf(" failed\n ! mbedtls_ssl_config_defaults returned %d\n\n", ret);
+        goto exit;
+    }
 
     if ((ret = mbedtls_ssl_setup(&ssl, &conf)) != 0) {
         printf(" failed\n ! mbedtls_ssl_setup returned %d\n\n", ret);
@@ -286,9 +337,9 @@ int main(int argc, const char *argv[])
 
 close_notify:
     printf(" . Closing the connection ...");
-    do {
-        ret = mbedtls_ssl_close_notify(&ssl);
-    } while (ret == MBEDTLS_ERR_SSL_WANT_WRITE);
+//    do {
+//        ret = mbedtls_ssl_close_notify(&ssl);
+//    } while (ret == MBEDTLS_ERR_SSL_WANT_WRITE);
     printf(" done\n");
 
 exit:
@@ -297,7 +348,9 @@ exit:
     mbedtls_ssl_config_free(&conf);
     mbedtls_entropy_free(&entropy);
     mbedtls_ctr_drbg_free(&ctr_drbg);
-    mbedtls_x509_crt_free(&cacert);
+    mbedtls_x509_crt_free(&ca_crt);
+    mbedtls_x509_crt_free(&client_crt);
+    mbedtls_pk_free(&client_key);
 
     return ret;
 }
@@ -318,7 +371,7 @@ exit:
 #include "mbedtls/certs.h"
 
 #define SERVER_PORT "4433"
-#define SERVER_NAME "localhost"
+#define SERVER_NAME "127.0.0.1"
 #define DEBUG_LEVEL 0
 
 #define HTTP_RESPONSE                                       \
@@ -326,6 +379,7 @@ exit:
     "<h2>mbed TLS Test Server</h2>\r\n"                     \
     "<p>Successful connection using: %s</p>\r\n"
 
+const char *ca_crt_file = "/Users/Young/Keys/ca.crt";
 const char *server_crt_file = "/Users/Young/Keys/server.crt";
 const char *server_key_file = "/Users/Young/Keys/server.key";
 
@@ -346,6 +400,7 @@ int main(int argc, const char *argv[])
     mbedtls_ssl_config conf;
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
+    mbedtls_x509_crt ca_crt;
     mbedtls_x509_crt server_crt;
     mbedtls_pk_context server_key;
 
@@ -355,6 +410,7 @@ int main(int argc, const char *argv[])
     mbedtls_ssl_config_init(&conf);
     mbedtls_entropy_init(&entropy);
     mbedtls_ctr_drbg_init(&ctr_drbg);
+    mbedtls_x509_crt_init(&ca_crt);
     mbedtls_x509_crt_init(&server_crt);
     mbedtls_pk_init(&server_key);
 
@@ -365,6 +421,14 @@ int main(int argc, const char *argv[])
     if ((ret = mbedtls_net_bind(&tls_listen_fd, SERVER_NAME, SERVER_PORT,
                     MBEDTLS_NET_PROTO_TCP)) != 0) {
         printf(" failed\n ! mbedtls_net_bind return %d\n\n", ret);
+        goto exit;
+    }
+    printf(" ok\n");
+
+    // load the ca certificate
+    printf(" . Loading the ca certificate ...");
+    if ((ret = mbedtls_x509_crt_parse_file(&ca_crt, ca_crt_file)) != 0) {
+        printf(" failed\n ! mbedtls_x509_crt_parse_file returned -0x%x\n\n", -ret);
         goto exit;
     }
     printf(" ok\n");
@@ -402,8 +466,10 @@ int main(int argc, const char *argv[])
     }
     printf(" ok\n");
 
+    mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_REQUIRED);
     mbedtls_ssl_conf_dbg(&conf, my_debug, stdout);
     mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
+    mbedtls_ssl_conf_ca_chain(&conf, &ca_crt, NULL);
 
     if ((ret = mbedtls_ssl_conf_own_cert(&conf, &server_crt, &server_key)) != 0) {
         printf(" failed\n ! mbedtls_ssl_config_defaults returned %d\n\n", ret);
@@ -412,10 +478,6 @@ int main(int argc, const char *argv[])
 
     if ((ret = mbedtls_ssl_setup(&ssl, &conf)) != 0) {
         printf(" failed\n ! mbedtls_ssl_setup returned %d\n\n", ret);
-        goto exit;
-    }
-    if ((ret = mbedtls_ssl_set_hostname(&ssl, "localhost")) != 0) {
-        printf(" failed\n ! mbedtls_ssl_set_hostname returned %d\n\n", ret);
         goto exit;
     }
 
@@ -447,6 +509,23 @@ reset:
     printf("   [ Ciphersuite is %s]\n", mbedtls_ssl_get_ciphersuite(&ssl));
     printf("   [ Record expansion is %d]\n", mbedtls_ssl_get_record_expansion(&ssl));
     printf("   [ Maximum fragment length is %u]\n", (unsigned int)mbedtls_ssl_get_max_frag_len(&ssl));
+
+    // verify peer cert and print info
+    uint32_t flags;
+    printf(" . Verifying peer X509 certificate ...");
+    if ((flags = mbedtls_ssl_get_verify_result(&ssl)) != 0) {
+        printf(" failed\n");
+        mbedtls_x509_crt_verify_info((char *)buf, sizeof(buf), " ! ", flags);
+        printf("%s\n", buf);
+    } else {
+        printf(" ok\n");
+    }
+
+    if (mbedtls_ssl_get_peer_cert(&ssl) != NULL) {
+        printf(" . Peer certificate information ... ok\n");
+        mbedtls_x509_crt_info((char *)buf, sizeof(buf) - 1, "   ", mbedtls_ssl_get_peer_cert(&ssl));
+        printf("%s\n", buf);
+    }
 
     // read the HTTP request
     printf(" < Read from server:");
@@ -485,7 +564,6 @@ close_notify:
     printf(" . Closing the connection ...");
     do {
         ret = mbedtls_ssl_close_notify(&ssl);
-        printf("ret = %d\n", ret);
     } while (ret == MBEDTLS_ERR_SSL_WANT_WRITE);
     printf(" done\n");
 
@@ -498,6 +576,7 @@ exit:
     mbedtls_ssl_config_free(&conf);
     mbedtls_entropy_free(&entropy);
     mbedtls_ctr_drbg_free(&ctr_drbg);
+    mbedtls_x509_crt_free(&ca_crt);
     mbedtls_x509_crt_free(&server_crt);
     mbedtls_pk_free(&server_key);
 
@@ -579,3 +658,9 @@ The customized debug callback prototype is
 ```c
 void (*f_dbg)(void *context, int debug_level, const char *file_name, int line_number, const char *message);
 ```
+
+## Refs
+
+1. [mbedTLS tutorial](https://tls.mbed.org/kb/how-to/mbedtls-tutorial)
+2. [TLS协议详解](http://blog.csdn.net/yzhou86/article/details/51211167)
+3. [tnodir/luapolarssl](https://github.com/tnodir/luapolarssl)

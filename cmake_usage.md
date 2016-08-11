@@ -227,6 +227,8 @@ EXECUTE_PROCESS(
 )
 ```
 
+注意：`COMMAND`后面的参数不要以字符串的形式给出，比如`COMMAND "ls -l"`
+
 ### `FIND_PACKAGE`
 
 查找是否有指定的软件
