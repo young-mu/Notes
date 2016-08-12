@@ -305,9 +305,10 @@ foo(1 2 3)
 
 ### 判断平台
 
-- `IF(CMAKE_SYSTEM_CMAKE MATCHES "Linux")` # Linux平台
-- `IF(APPLE)` # Mac平台
-- `IF(WIN32)` # Windows平台
+- `IF(CMAKE_SYSTEM_CMAKE MATCHES "Linux")` Linux平台
+- `IF(APPLE)` Mac平台
+- `IF(WIN32)` Windows平台
+- `IF(NOT WIN32)` 非Window平台
 
 ### 判断环境变量是否为空
 
