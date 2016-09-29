@@ -1,4 +1,4 @@
-# HW interface porting manual
+# Ruff MCU Hardware interface Porting Guide
 
 ## PWM / ADC / QEI / I2C / UART
 
@@ -98,6 +98,6 @@
 
 	`nuttx/arch/arm/src/tiva/tiva_gpio.c`
 	
-	Nuttx驱动和on-chip ROM API均提供操作硬件接口的方法，但后者并不是所有MCU都支持，但TI/Tiva TM4C129x系列MCU支持，它是指在芯片内部一块只读的ROM上，封装好了硬件接口的操作函数，用户可直接调用这些函数来操作接口 
+	Nuttx驱动和on-chip ROM API均提供操作硬件接口的方法，但后者并不是所有MCU都支持，但TI/Tiva TM4C129x系列MCU支持，它是指在芯片内部一块只读的ROM上，封装好了硬件接口的操作函数，用户可直接调用这些函数来操作接口
 	
 	REF: [Tiva C Series TM4C129x ROM User's Guide](http://www.ti.com/lit/ug/spmu363a/spmu363a.pdf)
