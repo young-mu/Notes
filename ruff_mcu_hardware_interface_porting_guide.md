@@ -1,4 +1,4 @@
-# Ruff MCU Hardware interface Porting Guide
+# Ruff MCU Hardware Interface Porting Guide
 
 ## PWM / ADC / QEI / I2C / UART
 
