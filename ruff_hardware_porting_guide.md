@@ -6,7 +6,7 @@
 
 ### 层次（由高至低）
 
-![RuffHWStack](https://raw.githubusercontent.com/young-mu/notes/master/res/ruff_hw_stack.png)
+![RuffHWStack1](https://raw.githubusercontent.com/young-mu/notes/master/res/ruff_hw_stack1.png)
 
 1. **JS层-应用程序**
 
@@ -64,3 +64,40 @@
   
 ## GPIO / EEPROM
 
+> 这里拿GPIO举例，同样适用于内置EEPROM
+
+相比于PWM等接口，在Nuttx中，并未对GPIO和EEPROM提供统一驱动设备文件的支持，也就是说，在Nuttx平台上写的GPIO/EEPROM测试程序是平台相关的，但Ruff会提供一层封装，已保证JS层代码可以跨硬件平台
+
+### 层次（由高至低）
+
+![RuffHWStack2](https://raw.githubusercontent.com/young-mu/notes/master/res/ruff_hw_stack2.png)
+
+1. **JS层-应用程序**
+
+	（同上，略）
+
+2. **JS层-设备驱动**
+
+	（同上，略）
+
+3. **JS层-接口驱动** 
+
+	（同上，略）
+
+4. **Glue层-JS/C绑定**
+
+	（同上，略）
+
+5. **Native层-驱动操作封装**
+
+	`apps/ruff/board/ti/tiva/gpio.c`
+
+    在内部需要完成Ruff指定的GPIO操作API，如`ruff_gpio_write`/`ruff_gpio_read`等，在这些API内部，调用不同芯片的GPIO操作函数完成相应功能，这些GPIO的操作函数由不同芯片提供的GPIO**驱动文件**（平台相关）（如`nuttx/arch/arm/src/tiva/tiva_pwm.c`）或**on-chip ROM API**提供
+
+6. **Nuttx驱动** / **on-chip ROM API**
+
+	`nuttx/arch/arm/src/tiva/tiva_gpio.c`
+	
+	Nuttx驱动和on-chip ROM API均提供操作硬件接口的方法，但后者并不是所有MCU都支持，但TI/Tiva TM4C129x系列MCU支持，它是指在芯片内部一块只读的ROM上，封装好了硬件接口的操作函数，用户可直接调用这些函数来操作接口 
+	
+	REF: [Tiva C Series TM4C129x ROM User's Guide](http://www.ti.com/lit/ug/spmu363a/spmu363a.pdf)
