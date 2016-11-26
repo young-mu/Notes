@@ -26,7 +26,7 @@
 
 #### php配置
 
-- httpd配置文件`/etc/apache2/httpd.conf`去掉以下注释
+- httpd配置文件`/etc/apache2/httpd.conf`去掉以下注释（**若更新到Sierra，请忽略这步**）
 
 ```c
 LoadModule php5_module libexec/apache2/libphp5.so
@@ -118,6 +118,16 @@ req.on('error', function(err) {
 });
 ```
 
+- 测试 apache server
+
+```shell
+> node get_client.js
+statusCode: 200
+GET: id = 001, value = 100
+```
+
+- 测试 node server（修改`port:3000`和`path:'/get?'`）
+
 ```shell
 > node get_client.js
 statusCode: 200
@@ -161,6 +171,16 @@ req.on('error', function(err) {
     console.log(err);
 });
 ```
+
+- 测试 apache server
+
+```shell
+> node post_client.js
+statusCode: 200
+POST: id = 001, value = 100
+```
+
+- 测试 node server（修改`port:3000`和`path:'/post?'`）
 
 ```shell
 > node post_client.js

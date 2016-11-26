@@ -80,6 +80,8 @@ SET(MY_LIST "1-" "2-" "3-")
 MESSAGE(STATUS "MY_LIST = ${MY_LIST}") # 1-;2-;3-
 STRING(REPLACE "-" " " _MY_LIST ${MY_LIST})
 MESSAGE(STATUS "_MY_LIST = ${_MY_LIST}") # 1 2 3
+STRING(TOLOWER "HAha" NAME_L)
+MESSAGE(STATUS "NAME_L = " ${NAME_L})
 ```
 
 ### `FILE`
@@ -319,6 +321,16 @@ IF(NOT "$ENV{MY_CMAKE_CC}" STREQUAL "")
     SET(CMAKE_C_COMPILER $ENV{MY_CMAKE_CC})
 ENDIF()
 PROJECT(project)
+```
+
+### 判断变量是否定义
+
+```c
+if (DEFINED NAME_H)
+	MESSAGE(STATUS "NAME_H defined")
+else()
+	MESSAGE(STATUS "NAME_H not defined")
+endif()
 ```
 
 ## 循环
