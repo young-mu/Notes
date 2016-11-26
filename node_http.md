@@ -187,3 +187,54 @@ POST: id = 001, value = 100
 statusCode: 200
 POST: id = 001, value = 100
 ```
+
+### http.get
+
+`http.get` 是 `http.request` 的简化版，默认为 `GET`，且不用调用 `req.end`
+
+- 读取文本
+
+```javascript
+// http_get_text.js
+var http = require('http');
+
+var URI = 'http://localhost/test.txt';
+var req = http.get(URI, function(res) {
+    console.log('statusCode: ' + res.statusCode);
+    res.setEncoding('utf-8');
+    res.on('data', function(data) {
+        console.log(data);
+    });
+});
+
+req.on('error', function(err) {
+    console.log(err);
+});
+```
+
+```shell
+> node http_get_text.js
+test txt
+```
+
+- 读取照片流
+
+```javascript
+// http_get_stream.js
+var http = require('http');
+var fs = require('fs');
+
+var URI = 'http://localhost/test.jpg';
+var req = http.get(URI, function(res) {
+    console.log('statusCode: ' + res.statusCode);
+    res.pipe(fs.createWriteStream('./test2.jpg'));
+});
+
+req.on('error', function(err) {
+    console.log(err);
+});
+```
+
+```shell
+> node http_get_stream.js
+```
