@@ -238,3 +238,43 @@ req.on('error', function(err) {
 ```shell
 > node http_get_stream.js
 ```
+
+### 文件server
+
+```javascript
+var fs = require('fs');
+var http = require('http');
+var url = require('url');
+
+var root = '/Users/Young/ABC/node_http/';
+
+http.createServer(function(req, res) {
+
+    console.log('new connection ...');
+
+    console.log('\thost = ', req.headers.host); // 访问目标地址（IP+端口）
+    console.log('\tip = ', req.connection.remoteAddress); // 访问者IP
+    console.log('\taddr = ', req.connection.remotePort); // 访问者端口
+    console.log('\tmethod = ', req.method); // 访问方式 (GET/POST)
+    console.log('\turl = ', req.url); // 访问路径
+
+    var file = root + req.url;
+    fs.readFile(file, function (error, data) {
+        if (error) {
+            res.writeHead(404, {'content-type': 'text/plain'});
+            res.end('Read Error');
+        } else {
+            res.writeHead(200, {'content-type': 'text/plain'});
+            res.write(data);
+            res.end();
+        }
+    });
+
+}).listen(8000);
+
+console.log('server starts to listen port 8000');
+```
+
+- 访问文件 `localhost:8000/test.txt`，成功显示文本
+- 访问图片 `localhost:8000/test.jpg`，成功显示图片
+- 访问错误 `localhost:8000/test.xxx`，不存在，显示`Read Error`
