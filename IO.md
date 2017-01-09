@@ -10,7 +10,12 @@
 
 1. select的fdset最多存放1024个fd，每次select调用要将3N个fdset（读/写/错误）由用户层传至内核层，且在用户层需要采用轮询遍历的方式查看三组fdset，性能随N增加而线性降低
 2. poll需要将N个pollfd由用户层传至内核层，且在用户层需要采用轮询遍历的方式查看pollfd的revents，性能随N增加而线性降低
-3. epoll通过epoll_create创建一个epfd（用户层fd管理内核层fdset），然后通过epoll_ctl添加或删除内核层fdset的fd，避免一起将N个fdset由用户层传至内核层，且内核层将触发的事件写在events中，用户层不必轮询遍历，性能不随N增加而降低
+3. epoll通过epoll_create创建一个epfd（用户层fd管理内核层fdset），然后通过epoll\_ctl添加或删除内核层fdset的fd，避免一起将N个fdset由用户层传至内核层，且内核层将触发的事件写在events中，用户层不必轮询遍历，性能不随N增加而降低
+
+### Links
+
+1. [POLLIN等关键字的解释](http://www.2cto.com/shouce/linuxman/socket.7.html)
+2. [IO多路复用历史](https://www.zhihu.com/question/32163005)
 
 ### Demo
 
@@ -23,6 +28,7 @@
 #include <string.h>
 #include <sys/epoll.h>
 #include <sys/select.h>
+#include <errno.h>
 
 #define FILE_NUM    (3)
 
@@ -43,6 +49,7 @@ void select_test(void)
     fd_set rset;
     struct timeval timeout;
 
+    // 最大值的fd
     int maxfd = fd[2];
 
     int ret;
@@ -51,14 +58,17 @@ void select_test(void)
         timeout.tv_usec = 0;
         FD_ZERO(&rset);
 
+        // 每次select之前都要刷新fdset
         for (int i = 0; i < FILE_NUM; i++) {
             printf("Add fd %d in select fd rset\n", fd[i]);
             FD_SET(fd[i], &rset);
         }
 
+        // 若要一直等待，则第五个参数传NULL
+        // 若fdset中有fd之前被close，则errno为9（EBADF）
         ret = select(maxfd + 1, &rset, NULL, NULL, &timeout);
         if (ret == -1) {
-            printf("poll failed\n");
+            printf("select failed with errno %d\n", errno);
             exit(EXIT_FAILURE);
         } else if (ret == 0) {
             printf("timeout\n");
@@ -84,9 +94,11 @@ void poll_test(void)
 
     int ret;
     while (1) {
+        // 若要一直等待，则第三个参数传-1
+        // 若fdset中有fd之前被close，则revents的POLLNVAL置位
         ret = poll(event, FILE_NUM, 5000);
-        if (ret < 0) {
-            printf("poll failed\n");
+        if (ret == -1) {
+            printf("poll failed with errno %d\n", errno);
             exit(EXIT_FAILURE);
         } else if (ret == 0) {
             printf("timeout\n");
@@ -118,9 +130,10 @@ void epoll_test(void)
     struct epoll_event events[FILE_NUM];
     int ret;
     while (1) {
+        // 若要一直等待，则第四个参数传-1
         ret = epoll_wait(epfd, events, 1, 5000);
-        if (ret < 0) {
-            printf("epoll_wait failed\n");
+        if (ret == -1) {
+            printf("epoll_wait failed with errno %d\n", errno);
             exit(EXIT_FAILURE);
         } else if (ret == 0) {
             printf("timeout\n");
