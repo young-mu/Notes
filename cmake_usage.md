@@ -342,6 +342,21 @@ FOREACH(VAR ${LINT_SCOPES})
 ENDFOREACH()
 ```
 
+## 开关
+
+```c
+if (ENABLE_GPIO)
+	MESSAGE(STATUS "ENABLE_GPIO")
+endif()
+```
+
+```bash
+> cmake -H. -Bbuild -D ENABLE_GPIO=1 // 打印ENABLE_GPIO
+> cmake -H. -Bbuild -D ENABLE_GPIO=ON // 打印ENABLE_GPIO
+> cmake -H. -Bbuild -D ENABLE_GPIO=OFF // 不打印ENABLE_GPIO
+> cmake -H. -Bbuild // 不打印ENABLE_GPIO
+```
+
 ## 语法注意事项
 
 1. 函数名和关键字（如`IF`）大小写均可，但**系统变量必须大写**
