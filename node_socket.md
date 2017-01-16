@@ -47,42 +47,47 @@ var client = net.connect({path: '/tmp/echo.sock'});
 > nc -U /tmp/echo.sock
 ```
 
-### Net socket 完整例子
+### net socket 完整例子
 
 - server (node)
 
 ```javascript
 var net = require('net');
 
-var HOST = '127.0.0.1';
-var PORT = 6969;
+var PORT = 2222;
 
 var server = net.createServer();
+server.listen(PORT);
 
-server.on('connection', function(sock) {
-    console.log('CONNECTED FROM: ' +
-                sock.remoteAddress + ':' + sock.remotePort);
-    sock.on('data', function(data) {
-        console.log('DATA: ' + data);
-        sock.write('You said "' + data + '"');
+server.on('connection', function (sock) {
+    console.log('\n> connected from: ' + sock.remoteAddress + ':' + sock.remotePort);
+
+    sock.on('data', function (data) {
+        console.log('> recv: ' + data);
+        sock.write('I\'m server!');
     });
-    sock.on('close', function(data) {
-        console.log('CLOSED BY: ' +
-                    sock.remoteAddress + ':' + sock.remotePort);
+
+    sock.on('close', function (data) {
+        console.log('> closed by: ' + sock.remoteAddress + ':' + sock.remotePort);
     });
-}).listen(PORT, HOST);
+});
 
 server.on('listening', function() {
-    console.log('Server starts to listen on ' + HOST +':'+ PORT);
+    console.log('> server starts to listen on ' + '*' +':'+ PORT);
+});
+
+server.on('close', function() {
+    console.log('> server is closed ...');
 });
 ```
 
 ```shell
-> node server.js
-Server starts to listen on 127.0.0.1:6969
-CONNECTED FROM: 127.0.0.1:61626
-DATA: I'm Young!
-CLOSED BY: 127.0.0.1:61626
+$ node server.js
+> server starts to listen on *:2222
+
+> connected from: ::ffff:127.0.0.1:53754
+> recv: I'm client!
+> closed by: ::ffff:127.0.0.1:53754
 ```
 
 - client (node)
@@ -91,30 +96,34 @@ CLOSED BY: 127.0.0.1:61626
 var net = require('net');
 
 var HOST = '127.0.0.1';
-var PORT = 6969;
+var PORT = 2222;
 
-var client = new net.Socket();
+var client = net.createConnection({port: PORT, host: HOST});
 
-client.connect(PORT, HOST, function() {
-    console.log('CONNECT TO: ' + HOST + ':' + PORT);
-    client.write('I\'m Young!');
+client.on('connect', function() {
+    console.log('> connect to: ' + HOST + ':' + PORT);
+    client.write('I\'m client!');
 });
 
-client.on('data', function(data) {
-    console.log('DATA: ' + data);
+client.on('data', function (buffer) {
+    console.log('> recv: ' + buffer.toString());
     client.destroy();
 });
 
 client.on('close', function() {
-    console.log('CLOSE CONNECTION');
+    console.log('> close connection');
+});
+
+client.on('error', function(error) {
+    console.log('> error: ' + error);
 });
 ```
 
 ```shell
-> node client.js
-CONNECT TO: 127.0.0.1:6969
-DATA: You said "I'm Young!"
-CLOSE CONNECTION
+$ node client.js
+> connect to: 127.0.0.1:2222
+> recv: I'm server!
+> close connection
 ```
 
 ## UDP
