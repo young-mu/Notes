@@ -175,8 +175,8 @@ hello world
 
 1. Client向Server发送**`client random`**
 2. Server向Client发送**`server random`**和Server证书`server.crt`
-3. Client用CA证书`ca.crt`中抽出的CA公钥验证Server证书`server.crt`的有效性（**验证**）
-4. CLient从Server证书`server.crt`中抽出Server公钥，加密**`premaster secret`**，然后发送给Server
+3. Client用**CA证书`ca.crt`中抽出的CA公钥**验证Server证书`server.crt`的有效性（**验证**）
+4. CLient从**Server证书`server.crt`中抽出Server公钥**，加密**`premaster secret`**，然后发送给Server
 4. Server用Server私钥`server.key`解密`premaster secret`
 
 #### 双向验证，Client和Server互验证
