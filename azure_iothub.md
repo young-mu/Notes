@@ -30,7 +30,7 @@ Support C#, C, Java, Python, Node
 - Direct Device Method
 - Device Twin roperties (RO/RW)
 
-![Twin](./twin.png)
+![Twin](./res/twin.png)
 
 ## Device Connection
 
