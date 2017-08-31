@@ -54,7 +54,7 @@ var algorithm = 'sha1';
 var key = 'abc';
 var buf = 'foo';
 
-var hmac = crypto.createHash(algorithm, key);
+var hmac = crypto.createHmac(algorithm, key);
 hmac.update(buf);
 var out = hmac.digest('hex');
 
